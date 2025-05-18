@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Llama Chatbot - Athena</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chat-bubble-user { background: #2563eb; color: white; }
+        .chat-bubble-assistant { background: #f3f4f6; color: #1f2937; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed md:static z-40 inset-y-0 left-0 w-64 bg-white shadow-lg flex flex-col transition-transform duration-300 transform -translate-x-full md:translate-x-0 md:w-64 md:h-auto md:shadow-none">
+        <div class="flex items-center justify-between px-6 py-4 border-b">
+            <span class="text-2xl font-bold text-blue-600">Athena</span>
+            <button id="closeSidebar" class="md:hidden text-gray-600 focus:outline-none">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="flex-1 py-4 space-y-1">
+            <a href="/" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium" id="nav-home">
+                <i class="fas fa-home mr-3"></i> Home
+            </a>
+            <a href="/internal-knowledge" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium" id="nav-internal">
+                <i class="fas fa-brain mr-3"></i> Internal Knowledge
+            </a>
+            <a href="/summarizer" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium" id="nav-summarizer">
+                <i class="fas fa-file-alt mr-3"></i> Summarizer
+            </a>
+            <a href="/semantic-doc" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium" id="nav-semantic">
+                <i class="fas fa-file-word mr-3"></i> Semantic Doc
+            </a>
+            <a href="/misc-tools" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium" id="nav-misc">
+                <i class="fas fa-tools mr-3"></i> Misc Tools
+            </a>
+            <a href="/chatbot" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium active" id="nav-chatbot">
+                <i class="fas fa-comments mr-3"></i> Chatbot
+            </a>
+        </nav>
+        <footer class="px-6 py-4 border-t text-xs text-gray-400 text-center">
+            &copy; 2024 Athena AI
+        </footer>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-h-screen md:ml-64">
+        <!-- Mobile Topbar -->
+        <div class="md:hidden flex items-center justify-between bg-white px-4 py-3 shadow">
+            <span class="text-xl font-bold text-blue-600">Athena</span>
+            <button id="openSidebar" class="text-gray-600 focus:outline-none">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <main class="flex-1 flex flex-col px-4 py-8">
+            <header class="mb-8 text-center">
+                <h1 class="text-3xl font-bold text-gray-800">Llama Chatbot</h1>
+                <p class="text-gray-600">Chat with your local Llama model. Fast, private, and ready for mobile integration.</p>
+            </header>
+
+            <div id="chatWindow" class="bg-white rounded-lg shadow-md p-6 mb-4 h-96 overflow-y-auto flex flex-col space-y-4"></div>
+
+            <form id="chatForm" class="flex space-x-2">
+                <input id="chatInput" type="text" class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Type your message..." autocomplete="off">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Send</button>
+            </form>
+
+            <div id="loadingIndicator" class="hidden text-center mt-4">
+                <i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>
+                <span class="ml-2 text-gray-600">Llama is thinking...</span>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Add sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const openSidebar = document.getElementById('openSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+        
+        if (openSidebar && closeSidebar && sidebar) {
+            openSidebar.addEventListener('click', () => {
+                sidebar.classList.remove('-translate-x-full');
+            });
+            closeSidebar.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+            });
+        }
+
+        // Highlight active link
+        const path = window.location.pathname;
+        document.querySelectorAll('.flex.items-center').forEach(link => {
+            if (link.getAttribute('href') === path) {
+                link.classList.add('active');
+            }
+        });
+
+        const chatWindow = document.getElementById('chatWindow');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        let history = [];
+
+        function addMessage(role, content) {
+            const bubble = document.createElement('div');
+            bubble.className = `rounded-lg px-4 py-2 max-w-[80%] whitespace-pre-line ${role === 'user' ? 'self-end chat-bubble-user' : 'self-start chat-bubble-assistant'}`;
+            bubble.textContent = content;
+            chatWindow.appendChild(bubble);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const prompt = chatInput.value.trim();
+            if (!prompt) return;
+            addMessage('user', prompt);
+            history.push({ role: 'user', content: prompt });
+            chatInput.value = '';
+            loadingIndicator.classList.remove('hidden');
+            try {
+                const response = await fetch('/chatbot/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, history })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    addMessage('assistant', data.response);
+                    history.push({ role: 'assistant', content: data.response });
+                } else {
+                    addMessage('assistant', data.detail || 'Error generating response.');
+                }
+            } catch (error) {
+                addMessage('assistant', error.message || 'Error generating response.');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html> 

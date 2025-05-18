@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Summarizer - Athena</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed md:static z-40 inset-y-0 left-0 w-64 bg-white shadow-lg flex flex-col transition-transform duration-300 transform -translate-x-full md:translate-x-0 md:w-64 md:h-auto md:shadow-none">
+        <div class="flex items-center justify-between px-6 py-4 border-b">
+            <span class="text-2xl font-bold text-blue-600">Athena</span>
+            <button id="closeSidebar" class="md:hidden text-gray-600 focus:outline-none">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="flex-1 py-4 space-y-1">
+            <a href="/" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium" id="nav-home">
+                <i class="fas fa-home mr-3"></i> Home
+            </a>
+            <a href="/internal-knowledge" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium" id="nav-internal">
+                <i class="fas fa-brain mr-3"></i> Internal Knowledge
+            </a>
+            <a href="/summarizer" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium active" id="nav-summarizer">
+                <i class="fas fa-file-alt mr-3"></i> Summarizer
+            </a>
+            <a href="/semantic-doc" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium" id="nav-semantic">
+                <i class="fas fa-file-word mr-3"></i> Semantic Doc
+            </a>
+            <a href="/misc-tools" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium" id="nav-misc">
+                <i class="fas fa-tools mr-3"></i> Misc Tools
+            </a>
+            <a href="/chatbot" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-100 hover:text-blue-700 rounded transition font-medium" id="nav-chatbot">
+                <i class="fas fa-comments mr-3"></i> Chatbot
+            </a>
+        </nav>
+        <footer class="px-6 py-4 border-t text-xs text-gray-400 text-center">
+            &copy; 2024 Athena AI
+        </footer>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-h-screen md:ml-64">
+        <!-- Mobile Topbar -->
+        <div class="md:hidden flex items-center justify-between bg-white px-4 py-3 shadow">
+            <span class="text-xl font-bold text-blue-600">Athena</span>
+            <button id="openSidebar" class="text-gray-600 focus:outline-none">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <main class="flex-1 flex flex-col px-4 py-8">
+            <header class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Text Summarizer</h1>
+                <p class="text-gray-600">Summarize text, PDFs, and web articles with AI</p>
+            </header>
+
+            <!-- Input Form -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Input Type</label>
+                    <div class="flex space-x-4">
+                        <button onclick="switchInputType('text')" class="input-type-btn active px-4 py-2 rounded-md" data-type="text">
+                            <i class="fas fa-file-alt mr-2"></i>Text
+                        </button>
+                        <button onclick="switchInputType('pdf')" class="input-type-btn px-4 py-2 rounded-md" data-type="pdf">
+                            <i class="fas fa-file-pdf mr-2"></i>PDF
+                        </button>
+                        <button onclick="switchInputType('web')" class="input-type-btn px-4 py-2 rounded-md" data-type="web">
+                            <i class="fas fa-globe mr-2"></i>Web Article
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text Input -->
+                <div id="textInput" class="input-section">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Text to Summarize</label>
+                        <textarea id="textContent" rows="6" 
+                                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                  placeholder="Enter your text here..."></textarea>
+                    </div>
+                </div>
+
+                <!-- PDF Input -->
+                <div id="pdfInput" class="input-section hidden">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Upload PDF</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                            <div class="space-y-1 text-center">
+                                <i class="fas fa-file-pdf text-gray-400 text-4xl mb-2"></i>
+                                <div class="flex text-sm text-gray-600">
+                                    <label for="pdfFile" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                        <span>Upload a file</span>
+                                        <input id="pdfFile" type="file" class="sr-only" accept=".pdf">
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500">PDF up to 10MB</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Web Article Input -->
+                <div id="webInput" class="input-section hidden">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Article URL</label>
+                        <input type="url" id="articleUrl" 
+                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                               placeholder="https://example.com/article">
+                    </div>
+                </div>
+
+                <!-- Language Selection -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Translation Language (Optional)</label>
+                    <select id="languageSelect" 
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">No translation</option>
+                    </select>
+                </div>
+
+                <button onclick="summarize()" 
+                        class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Summarize
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results" class="bg-white rounded-lg shadow-md p-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Summary</h2>
+                    <button onclick="copyToClipboard('summaryContent')" class="text-blue-600 hover:text-blue-700">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                <div id="summaryContent" class="prose max-w-none mb-6"></div>
+
+                <div id="translationSection" class="mt-6 hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Translation</h2>
+                        <button onclick="copyToClipboard('translationContent')" class="text-blue-600 hover:text-blue-700">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <div id="translationContent" class="prose max-w-none"></div>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+                <div class="bg-white rounded-lg p-6 text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-gray-700">Processing...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentInputType = 'text';
+        let languages = {};
+
+        // Initialize
+        async function initialize() {
+            try {
+                const response = await fetch('/summarizer/languages');
+                const data = await response.json();
+                languages = data.languages;
+                
+                const select = document.getElementById('languageSelect');
+                Object.entries(languages).forEach(([code, name]) => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading languages:', error);
+            }
+        }
+
+        function switchInputType(type) {
+            currentInputType = type;
+            
+            // Update buttons
+            document.querySelectorAll('.input-type-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-700');
+            });
+            event.target.classList.add('active', 'bg-blue-600', 'text-white');
+            event.target.classList.remove('bg-gray-100', 'text-gray-700');
+            
+            // Show/hide sections
+            document.querySelectorAll('.input-section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(`${type}Input`).classList.remove('hidden');
+        }
+
+        async function summarize() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const results = document.getElementById('results');
+            const summaryContent = document.getElementById('summaryContent');
+            const translationSection = document.getElementById('translationSection');
+            const translationContent = document.getElementById('translationContent');
+            
+            loadingOverlay.classList.remove('hidden');
+            results.classList.add('hidden');
+            
+            try {
+                let response;
+                const language = document.getElementById('languageSelect').value;
+                
+                switch (currentInputType) {
+                    case 'text':
+                        const text = document.getElementById('textContent').value;
+                        response = await fetch('/summarizer/text', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text, language })
+                        });
+                        break;
+                        
+                    case 'pdf':
+                        const pdfFile = document.getElementById('pdfFile').files[0];
+                        if (!pdfFile) {
+                            throw new Error('Please select a PDF file');
+                        }
+                        const formData = new FormData();
+                        formData.append('file', pdfFile);
+                        if (language) {
+                            formData.append('language', language);
+                        }
+                        response = await fetch('/summarizer/pdf', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        break;
+                        
+                    case 'web':
+                        const url = document.getElementById('articleUrl').value;
+                        if (!url) {
+                            throw new Error('Please enter a URL');
+                        }
+                        response = await fetch('/summarizer/web', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ url, language })
+                        });
+                        break;
+                }
+                
+                const data = await response.json();
+                
+                summaryContent.textContent = data.summary;
+                results.classList.remove('hidden');
+                
+                if (data.translated_summary) {
+                    translationContent.textContent = data.translated_summary;
+                    translationSection.classList.remove('hidden');
+                } else {
+                    translationSection.classList.add('hidden');
+                }
+            } catch (error) {
+                alert(error.message || 'An error occurred while summarizing');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        }
+
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+
+        // Add sidebar functionality
+        const sidebar = document.getElementById('sidebar');
+        const openSidebar = document.getElementById('openSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+        
+        if (openSidebar && closeSidebar && sidebar) {
+            openSidebar.addEventListener('click', () => {
+                sidebar.classList.remove('-translate-x-full');
+            });
+            closeSidebar.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+            });
+        }
+
+        // Highlight active link
+        const path = window.location.pathname;
+        document.querySelectorAll('.flex.items-center').forEach(link => {
+            if (link.getAttribute('href') === path) {
+                link.classList.add('active');
+            }
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html> 
